@@ -20,8 +20,7 @@ def fetch_live_data():
         response = requests.get(SEARCH_URL, params=params, timeout=10).json()
         if response.get("code") == 200:
             return response.get("result", {}).get("newslist", [])
-    except:
-        pass
+    except: pass
     return []
 
 def create_calendar():
@@ -33,34 +32,39 @@ def create_calendar():
     beijing_tz = pytz.timezone('Asia/Shanghai')
 
     count = 0
-    # --- 逻辑 A: 自动抓取 ---
+    # 逻辑：匹配球星，如果没有球星，就抓取带“网球/羽毛球”字眼的新闻供测试
     for item in news_list:
-        content = item.get('title', '') + item.get('description', '')
-        if any(star in content for star in followers):
+        title = item.get('title', '')
+        content = title + item.get('description', '')
+        
+        is_star = any(star in content for star in followers)
+        is_sport = any(word in title for word in ["网球", "羽毛球", "赛程"])
+
+        if is_star or is_sport:
             event = Event()
-            event.add('summary', f"🎾 {item['title']}")
+            prefix = "⭐ " if is_star else "🎾 "
+            event.add('summary', f"{prefix}{title}")
             try:
                 pub_time = datetime.strptime(item['ctime'], '%Y-%m-%d %H:%M')
                 start_time = beijing_tz.localize(pub_time)
                 event.add('dtstart', start_time)
-                event.add('dtend', start_time + timedelta(hours=2))
+                event.add('dtend', start_time + timedelta(hours=1))
                 event.add('uid', str(item['id']))
                 cal.add_component(event)
                 count += 1
             except: continue
 
-    # --- 逻辑 B: 保底测试数据 (确保你手机现在能看到东西) ---
-    # 如果你想确认订阅是否成功，这里强行加一个明天的测试日程
+    # 强制加一个明早的申博加油提醒，用来测试同步链路
     test_event = Event()
-    test_event.add('summary', '🚀 自动更新测试: 辛纳/石宇奇待定比赛')
-    test_event.add('dtstart', beijing_tz.localize(datetime(2026, 3, 27, 20, 0))) # 明晚8点
-    test_event.add('dtend', beijing_tz.localize(datetime(2026, 3, 27, 22, 0)))
-    test_event.add('uid', 'test_20260327_001')
+    test_event.add('summary', '📖 申博/GRE 加油！(自动同步测试)')
+    test_event.add('dtstart', beijing_tz.localize(datetime(2026, 3, 28, 9, 0)))
+    test_event.add('dtend', beijing_tz.localize(datetime(2026, 3, 28, 10, 0)))
+    test_event.add('uid', 'study_test_001')
     cal.add_component(test_event)
 
     with open('my_schedule.ics', 'wb') as f:
         f.write(cal.to_ical())
-    print(f"✅ 完成！抓取到 {count} 条相关赛程，并添加了测试项")
+    print(f"✅ 完成！匹配到 {count} 条动态")
 
 if __name__ == "__main__":
     create_calendar()
