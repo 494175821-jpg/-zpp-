@@ -3,6 +3,7 @@
 
 # --- 网球男单 (Top 10) ---
 辛纳, Sinner, 阿尔卡拉斯, Alcaraz, 德约科维奇, Djokovic, 德约, 兹维列夫, Zverev, 梅德韦杰夫, Medvedev, 鲁德, Ruud, 鲁内, Rune, 弗里茨, Fritz, 德米纳尔, De Minaur
+Ofner
 
 # --- 羽毛球男单 (Top 10) ---
 石宇奇, Shi Yuqi, 安赛龙, Axelsen, 昆拉武特, Kunlavut, 李梓嘉, Lee Zii Jia, 乔纳坦, Christie, 安东森, Antonsen, 李诗沣, Li Shifeng, 奈良冈功大, Naraoka, 骆建佑, Loh Kean Yew
