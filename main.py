@@ -15,52 +15,43 @@ def get_follow_list():
     return ["辛纳", "石宇奇"]
 
 def fetch_live_data():
-    """从 API 实时抓取体育赛程快讯"""
     params = {"key": TIAN_API_KEY, "num": 50}
     try:
-        response = requests.get(SEARCH_URL, params=params).json()
+        response = requests.get(SEARCH_URL, params=params, timeout=10).json()
         if response.get("code") == 200:
-            return response["result"]["newslist"]
-        else:
-            print(f"API返回错误: {response.get('msg')}")
-    except Exception as e:
-        print(f"网络抓取失败: {e}")
+            return response.get("result", {}).get("newslist", [])
+    except:
+        pass
     return []
 
 def create_calendar():
     followers = get_follow_list()
     news_list = fetch_live_data()
     cal = Calendar()
-    cal.add('prodid', '-//Auto Sports Calendar//')
+    cal.add('prodid', '-//Sports Auto//')
     cal.add('version', '2.0')
     beijing_tz = pytz.timezone('Asia/Shanghai')
 
     count = 0
     for item in news_list:
-        # 这里的 content 包含了标题和描述，用来匹配球星名字
         content = item.get('title', '') + item.get('description', '')
         if any(star in content for star in followers):
             event = Event()
             event.add('summary', f"🏆 {item['title']}")
-            event.add('description', f"{item['description']}\n来源: {item['source']}")
-            
-            # 转换发布时间为北京时间
             try:
                 pub_time = datetime.strptime(item['ctime'], '%Y-%m-%d %H:%M')
                 start_time = beijing_tz.localize(pub_time)
                 event.add('dtstart', start_time)
                 event.add('dtend', start_time + timedelta(hours=2))
-                event.add('uid', item['id'])
-                event.add('dtstamp', datetime.now(beijing_tz))
+                event.add('uid', str(item['id']))
                 cal.add_component(event)
                 count += 1
             except:
                 continue
 
-    # 导出文件
     with open('my_schedule.ics', 'wb') as f:
         f.write(cal.to_ical())
-    print(f"✅ 全自动同步完成，共抓取到 {count} 条相关赛程")
+    print(f"✅ 完成！抓取到 {count} 条赛程")
 
 if __name__ == "__main__":
     create_calendar()
