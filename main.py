@@ -18,7 +18,7 @@ def fetch_data(keyword):
 
 def create_calendar():
     # 我们选出三个最容易出新闻的词进行“深度探测”
-    search_keywords = ["梅德韦杰夫", "辛纳", "迈阿密大师赛"]
+    search_keywords = ["网球", "羽毛球", "中国"]
     
     cal = Calendar()
     cal.add('prodid', '-//Super Search Calendar//')
