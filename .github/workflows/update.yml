@@ -1,0 +1,3 @@
+/.github/workflows/name: Update Sports Calendar on: schedule: - cron: '0 21 * * *' # 每天北京时间凌晨5点自动运行 workflow_dispatch: # 方便你手动点击测试 jobs: build: runs-on: ubuntu-latest steps: - uses: actions/checkout@v3 - name: Set up Python uses: actions
+
+Copied from: New File at / · 494175821-jpg/-zpp- - <https://github.com/494175821-jpg/-zpp-/new/main>
