@@ -33,11 +33,12 @@ def create_calendar():
     beijing_tz = pytz.timezone('Asia/Shanghai')
 
     count = 0
+    # --- 逻辑 A: 自动抓取 ---
     for item in news_list:
         content = item.get('title', '') + item.get('description', '')
         if any(star in content for star in followers):
             event = Event()
-            event.add('summary', f"🏆 {item['title']}")
+            event.add('summary', f"🎾 {item['title']}")
             try:
                 pub_time = datetime.strptime(item['ctime'], '%Y-%m-%d %H:%M')
                 start_time = beijing_tz.localize(pub_time)
@@ -46,12 +47,20 @@ def create_calendar():
                 event.add('uid', str(item['id']))
                 cal.add_component(event)
                 count += 1
-            except:
-                continue
+            except: continue
+
+    # --- 逻辑 B: 保底测试数据 (确保你手机现在能看到东西) ---
+    # 如果你想确认订阅是否成功，这里强行加一个明天的测试日程
+    test_event = Event()
+    test_event.add('summary', '🚀 自动更新测试: 辛纳/石宇奇待定比赛')
+    test_event.add('dtstart', beijing_tz.localize(datetime(2026, 3, 27, 20, 0))) # 明晚8点
+    test_event.add('dtend', beijing_tz.localize(datetime(2026, 3, 27, 22, 0)))
+    test_event.add('uid', 'test_20260327_001')
+    cal.add_component(test_event)
 
     with open('my_schedule.ics', 'wb') as f:
         f.write(cal.to_ical())
-    print(f"✅ 完成！抓取到 {count} 条赛程")
+    print(f"✅ 完成！抓取到 {count} 条相关赛程，并添加了测试项")
 
 if __name__ == "__main__":
     create_calendar()
