@@ -1,7 +1,34 @@
-/.github/workflows/name: Update Sports Calendar on: schedule: - cron: '0 21 * * *' # 每天北京时间凌晨5点自动运行 workflow_dispatch: # 方便你手动点击测试 jobs: build: runs-on: ubuntu-latest steps: - uses: actions/checkout@v3 - name: Set up Python uses: actions
+name: Update Sports Calendar
+on:
+  schedule:
+    - cron: '0 21 * * *'
+  workflow_dispatch:
 
-Copied from: New File at / · 494175821-jpg/-zpp- - <https://github.com/494175821-jpg/-zpp-/new/main>
-
-
-
-Copied from: Editing -zpp-/.github/workflows/update.yml at main · 494175821-jpg/-zpp- - <https://github.com/494175821-jpg/-zpp-/edit/main/.github/workflows/update.yml>
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 明确赋予写权限
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          pip install icalendar pytz requests beautifulsoup4
+          
+      - name: Run script
+        run: python main.py
+        
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add my_schedule.ics
+          # 即使没有新比赛更新，也不报错退出
+          git commit -m "Update schedule" || echo "No changes to commit"
+          git push
