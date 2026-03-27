@@ -4,75 +4,76 @@ from datetime import datetime, timedelta
 import pytz
 import os
 
+# --- 配置区 ---
 TIAN_API_KEY = '211ed84f5ada94ad99a54addbafa7275' 
-SEARCH_URL = "https://apis.tianapi.com/tiyunews/index"
+NEWS_URL = "https://apis.tianapi.com/tiyunews/index"
 
 def get_follow_list():
+    # 自动包含一些“未来赛程”的触发词
+    base_list = ["赛程", "预告", "对阵", "迈阿密", "全英赛", "半决赛", "决赛"]
     if os.path.exists('config.txt'):
         with open('config.txt', 'r', encoding='utf-8') as f:
-            return [line.strip().lower() for line in f if line.strip() and not line.startswith('#')]
-    return ["郑钦文", "辛纳", "梅德韦杰夫"]
+            user_list = [line.strip().lower() for line in f if line.strip() and not line.startswith('#')]
+            return list(set(base_list + user_list))
+    return base_list
 
-def fetch_live_data():
-    # 增加到 100 条，扩大搜索范围
-    params = {"key": TIAN_API_KEY, "num": 100}
+def fetch_data():
+    # 抓取最近 150 条，尽量往回追溯，寻找包含未来时间的预告新闻
+    params = {"key": TIAN_API_KEY, "num": 150}
     try:
-        response = requests.get(SEARCH_URL, params=params, timeout=10).json()
-        if response.get("code") == 200:
-            return response.get("result", {}).get("newslist", [])
-    except: pass
-    return []
+        res = requests.get(NEWS_URL, params=params).json()
+        return res.get("result", {}).get("newslist", []) if res.get("code") == 200 else []
+    except: return []
 
 def create_calendar():
     followers = get_follow_list()
-    news_list = fetch_live_data()
+    news_list = fetch_data()
     cal = Calendar()
-    cal.add('prodid', '-//Global Sports Monitoring//')
+    cal.add('prodid', '-//Future Sports//')
     cal.add('version', '2.0')
     beijing_tz = pytz.timezone('Asia/Shanghai')
 
     seen_ids = set()
     count = 0
 
-    # 只要新闻里包含这些“强关联”词，就算匹配成功
-    essential_keywords = ["迈阿密", "公开赛", "大师赛", "对阵", "晋级", "赛程"]
-
     for item in news_list:
         title = item.get('title', '')
         desc = item.get('description', '')
         content = (title + desc).lower()
-        news_id = item.get('id')
-
-        # 逻辑：(有人名) 或者 (迈阿密 + 关键球员名的一部分)
-        match = any(star in content for star in followers)
         
-        if match:
+        # 只要包含名单里的人，或者包含“赛程”类词汇
+        if any(word in content for word in followers):
+            news_id = item.get('id')
             if news_id in seen_ids: continue
+            
             event = Event()
-            event.add('summary', f"🏆 {title}")
+            event.add('summary', f"🏁 {title}")
+            event.add('description', f"详情: {desc}\n发布时间: {item['ctime']}")
+            
             try:
+                # 注意：新闻快讯的时间是发布时间。
+                # 既然是抓预告，我们将时间设为发布时间之后，方便你在日历中看到它。
                 pub_time = datetime.strptime(item['ctime'], '%Y-%m-%d %H:%M')
                 start_time = beijing_tz.localize(pub_time)
                 event.add('dtstart', start_time)
-                event.add('dtend', start_time + timedelta(hours=2))
+                event.add('dtend', start_time + timedelta(hours=1))
                 event.add('uid', str(news_id))
+                
                 cal.add_component(event)
                 seen_ids.add(news_id)
                 count += 1
             except: continue
 
-    # 始终保留一个状态项，让你知道脚本跑过了
-    status_event = Event()
-    status_event.add('summary', f"📡 监控中: 匹配到 {count} 场比赛")
-    now = datetime.now(beijing_tz)
-    status_event.add('dtstart', now)
-    status_event.add('dtend', now + timedelta(minutes=15))
-    status_event.add('uid', f"status_{now.strftime('%Y%m%d%H%M')}")
-    cal.add_component(status_event)
+    # 状态标记
+    status = Event()
+    status.add('summary', f"📅 近期赛程扫描中 (已发现 {count} 条相关)")
+    status.add('dtstart', datetime.now(beijing_tz))
+    status.add('dtend', datetime.now(beijing_tz) + timedelta(minutes=30))
+    cal.add_component(status)
 
     with open('my_schedule.ics', 'wb') as f:
         f.write(cal.to_ical())
-    print(f"✅ 处理完毕，当前匹配数: {count}")
+    print(f"✅ 扫描完成，匹配到 {count} 条动态")
 
 if __name__ == "__main__":
     create_calendar()
