@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import pytz
 import os
 
-# --- 配置区 ---
 TIAN_API_KEY = '211ed84f5ada94ad99a54addbafa7275' 
 SEARCH_URL = "https://apis.tianapi.com/tiyunews/index"
 
@@ -32,18 +31,11 @@ def create_calendar():
     beijing_tz = pytz.timezone('Asia/Shanghai')
 
     count = 0
-    # 逻辑：匹配球星，如果没有球星，就抓取带“网球/羽毛球”字眼的新闻供测试
     for item in news_list:
-        title = item.get('title', '')
-        content = title + item.get('description', '')
-        
-        is_star = any(star in content for star in followers)
-        is_sport = any(word in title for word in ["网球", "羽毛球", "赛程"])
-
-        if is_star or is_sport:
+        content = item.get('title', '') + item.get('description', '')
+        if any(star in content for star in followers):
             event = Event()
-            prefix = "⭐ " if is_star else "🎾 "
-            event.add('summary', f"{prefix}{title}")
+            event.add('summary', f"🏆 {item['title']}")
             try:
                 pub_time = datetime.strptime(item['ctime'], '%Y-%m-%d %H:%M')
                 start_time = beijing_tz.localize(pub_time)
@@ -54,17 +46,17 @@ def create_calendar():
                 count += 1
             except: continue
 
-    # 强制加一个明早的申博加油提醒，用来测试同步链路
+    # 保底测试项：确保手机能看到
     test_event = Event()
-    test_event.add('summary', '📖 申博/GRE 加油！(自动同步测试)')
+    test_event.add('summary', '📖 自动化链路测试成功')
     test_event.add('dtstart', beijing_tz.localize(datetime(2026, 3, 28, 9, 0)))
     test_event.add('dtend', beijing_tz.localize(datetime(2026, 3, 28, 10, 0)))
-    test_event.add('uid', 'study_test_001')
+    test_event.add('uid', 'test_success_001')
     cal.add_component(test_event)
 
     with open('my_schedule.ics', 'wb') as f:
         f.write(cal.to_ical())
-    print(f"✅ 完成！匹配到 {count} 条动态")
+    print(f"✅ 完成！生成了 {count} 条赛程")
 
 if __name__ == "__main__":
     create_calendar()
