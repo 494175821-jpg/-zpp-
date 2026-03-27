@@ -1,8 +1,8 @@
 name: Update Sports Calendar
 on:
   schedule:
-    - cron: '0 21 * * *'
-  workflow_dispatch:
+    - cron: '0 21 * * *'  # 每天北京时间凌晨5点自动运行
+  workflow_dispatch:      # 方便你手动点击测试
 
 jobs:
   build:
@@ -10,19 +10,26 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Install dependencies
-        run: pip install icalendar pytz requests
-      - name: Run script
+
+      - name: Install all dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests icalendar pytz
+
+      - name: Run calendar script
         run: python main.py
-      - name: Commit and Push
+
+      - name: Commit and Push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add my_schedule.ics
-          git commit -m "Update calendar" || echo "No changes"
+          git commit -m "Auto-update calendar [skip ci]" || echo "No changes to commit"
           git push
