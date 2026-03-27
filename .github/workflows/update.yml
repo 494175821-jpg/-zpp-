@@ -8,27 +8,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # 明确赋予写权限
+      contents: write
     steps:
       - uses: actions/checkout@v3
-      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-          
       - name: Install dependencies
-        run: |
-          pip install icalendar pytz requests beautifulsoup4
-          
+        run: pip install icalendar pytz requests
       - name: Run script
         run: python main.py
-        
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add my_schedule.ics
-          # 即使没有新比赛更新，也不报错退出
-          git commit -m "Update schedule" || echo "No changes to commit"
+          git commit -m "Update calendar" || echo "No changes"
           git push
